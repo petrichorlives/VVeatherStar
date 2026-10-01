@@ -448,7 +448,7 @@
     
     <div class="intro-title-box">
       <div class="intro-channel-num">CHANNEL 2</div>
-      <div class="intro-banner-text">Good Evening Forecast</div>
+      <div class="intro-banner-text">Live Forecast</div>
       <div class="intro-subtext">SANGAMON VALLEY REGIONAL WEATHER SERVICE</div>
     </div>
 
@@ -569,7 +569,7 @@
   /* Toggle Center Stage View Mode */
   setInterval(() => {
     currentStageMode = currentStageMode === "pixel" ? "map" : "pixel";
-    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "AMBIENT COZY SCENE" : "ILLINOIS REGIONAL RADAR";
+    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "CURRENT CONDITIONS" : "ILLINOIS REGIONAL RADAR";
   }, WS_CONFIG.toggleStageMs);
 
   /* OpenWeather Telemetry Data Fetch */
@@ -732,11 +732,11 @@
     }
 
     function runSlide2() {
-      title.innerText = "LOCAL NARRATIVE";
+      title.innerText = "THE LOCAL NARRATIVE";
       body.innerHTML = `SUMMARY FOR ${locName.toUpperCase()}:<br>` +
-                       `<span style="color:var(--bc-text-white);">${cond} with temperatures near ${temp} degrees. Relative humidity is holding at ${weatherStore.cur.main.humidity} percent.</span>`;
+                       `<span style="color:var(--bc-text-white);">${cond} with temperatures near ${temp} degrees. Relative humidity is around ${weatherStore.cur.main.humidity} percent.</span>`;
       speakAndFollowUp(
-        `Here is your local forecast summary. Expect ${cond} with temperatures holding near ${temp} degrees across the Sangamon Valley.`,
+        `Here is your local forecast summary. Expect ${cond} with temperatures near ${temp} degrees across the Sangamon Valley.`,
         runSlide3
       );
     }
@@ -756,7 +756,7 @@
       title.innerText = "EXTENDED TELECAST";
       body.innerHTML = `3-DAY OUTLOOK AVAILABLE ON MAIN DISPLAY.<br><span style="color:var(--bc-gold);">THANK YOU FOR WATCHING CHANNEL 2 TELECAST.</span>`;
       speakAndFollowUp(
-        `That concludes your Local on the 8s telecast recap. Stay tuned for continuous regional weather telemetry.`,
+        `That concludes your Local weather telecast recap. Stay tuned for continuous regional weather telemetry.`,
         finishRecap
       );
     }
