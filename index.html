@@ -5,20 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Cozy Nightly Weather - Sangamon Valley</title>
+<title>Sangamon Valley Weather Telecast</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Archivo+Narrow:ital,wght@0,600;0,700;1,700&display=swap');
 
   :root {
-    --ws-bg: #0c0f17;
-    --ws-panel-bg: rgba(18, 24, 38, 0.92);
-    --ws-header-grad: linear-gradient(180deg, #2a3447 0%, #161c28 100%);
-    --ws-amber: #ffb703;
-    --ws-soft-gold: #fb8500;
-    --ws-phosphor: #55ff99;
-    --ws-white: #e0e6ed;
-    --ws-dim: #8d99ae;
-    --ws-border: #2b3a55;
+    --bc-bg-outer: #090c14;
+    --bc-bg-inner: linear-gradient(135deg, #1b264f 0%, #11172f 50%, #0a0d1a 100%);
+    --bc-panel-bg: rgba(22, 33, 62, 0.94);
+    --bc-header-blue: linear-gradient(180deg, #2b3e75 0%, #1a274e 100%);
+    --bc-gold: #fcc010;
+    --bc-gold-bright: #ffea00;
+    --bc-text-white: #ffffff;
+    --bc-text-yellow: #f1f536;
+    --bc-text-dim: #9fb1d1;
+    --bc-border-light: #415993;
+    --bc-border-dark: #0f172a;
+    --bc-radar-green: #37eb34;
+    --font-main: 'Archivo Narrow', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
   }
 
   * {
@@ -31,9 +36,9 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background-color: #05070a;
-    font-family: 'VT323', 'Share Tech Mono', monospace;
-    color: var(--ws-white);
+    background-color: var(--bc-bg-outer);
+    font-family: var(--font-main);
+    color: var(--bc-text-white);
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -42,44 +47,150 @@
     align-items: center;
   }
 
-  .star4000-frame {
+  /* Main Container Frame */
+  .telecast-frame {
     width: 100vw;
     height: 100vh;
-    max-width: 667px;
-    max-height: 375px;
-    background: var(--ws-bg);
-    border: 2px solid #1a2333;
+    max-width: 720px;
+    max-height: 405px;
+    background: var(--bc-bg-inner);
+    border: 3px solid #2d3b66;
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
-    padding: 6px;
+    padding: 8px;
     position: relative;
-    box-shadow: 0 0 20px rgba(0,0,0,0.9);
+    box-shadow: 0 0 35px rgba(0, 0, 0, 0.95), inset 0 0 15px rgba(0,0,0,0.6);
+    overflow: hidden;
   }
 
-  /* Soft CRT Scanline Overlay */
+  /* CRT Broadcast Overlay & VHS Lines */
   .crt-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-    background-size: 100% 4px;
+    background: linear-gradient(rgba(18, 16, 26, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
+                linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02));
+    background-size: 100% 4px, 6px 100%;
     z-index: 10;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.8;
   }
 
-  /* Header Bar & Recap Button */
-  .ws-header {
-    background: var(--ws-header-grad);
-    border: 1px solid var(--ws-border);
-    color: var(--ws-amber);
+  /* Retro Broadcast Intro Screen */
+  .intro-screen {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #12102e 0%, #291a4c 50%, #0d091a 100%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+
+  .intro-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .vhs-header-tag {
+    font-family: var(--font-mono);
+    color: #00ffaa;
+    font-size: 0.9rem;
+    align-self: flex-start;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px rgba(0,255,170,0.6);
+  }
+
+  .intro-title-box {
+    text-align: center;
+    transform: skewX(-6deg);
+  }
+
+  .intro-channel-num {
+    font-size: 4.8rem;
+    font-weight: 800;
+    font-style: italic;
+    line-height: 0.8;
+    background: linear-gradient(180deg, #ffffff 0%, #a3b8e0 50%, #465b8c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(4px 4px 0px #0a0814);
+    letter-spacing: -2px;
+  }
+
+  .intro-banner-text {
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--bc-gold);
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 4px #000;
+    margin-top: 6px;
+  }
+
+  .intro-subtext {
+    font-size: 1rem;
+    color: #d1dcf0;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+  }
+
+  .start-telecast-btn {
+    background: linear-gradient(180deg, #fcd338 0%, #e69d00 100%);
+    color: #090e1a;
+    font-family: var(--font-main);
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 8px 24px;
+    border: 2px solid #ffffff;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 10px rgba(252, 192, 16, 0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+
+  .start-telecast-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
+
+  /* Telecast Header Bar */
+  .tele-header {
+    background: var(--bc-header-blue);
+    border: 2px solid var(--bc-border-light);
+    border-bottom: 2px solid #000;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 2px 10px;
+    height: 36px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  }
+
+  .tele-logo-badge {
+    background: linear-gradient(180deg, #e63946 0%, #9e1b24 100%);
+    color: #fff;
+    font-weight: 700;
+    font-style: italic;
+    padding: 1px 8px;
+    font-size: 0.95rem;
+    border: 1px solid #ff8890;
+    transform: skewX(-10deg);
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .tele-title {
+    color: #ffffff;
     font-size: 1.25rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-    height: 32px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-shadow: 1px 1px 3px #000;
   }
 
   .header-actions {
@@ -89,198 +200,275 @@
   }
 
   .recap-btn {
-    background: #111622;
-    color: var(--ws-amber);
-    border: 1px solid var(--ws-amber);
-    font-family: 'VT323', monospace;
-    font-size: 0.95rem;
-    padding: 1px 8px;
+    background: linear-gradient(180deg, var(--bc-gold) 0%, #c98800 100%);
+    color: #050810;
+    border: 1px solid #ffe885;
+    font-family: var(--font-main);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 2px 10px;
     cursor: pointer;
     letter-spacing: 1px;
-    transition: all 0.2s ease;
+    transform: skewX(-8deg);
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.6);
   }
 
   .recap-btn:active {
-    background: var(--ws-amber);
-    color: #000;
+    transform: skewX(-8deg) scale(0.96);
+  }
+
+  .tele-clock {
+    font-family: var(--font-mono);
+    color: var(--bc-gold-bright);
+    font-size: 1.1rem;
+    text-shadow: 0 0 4px rgba(255, 234, 0, 0.4);
   }
 
   /* Primary Grid Layout */
-  .ws-grid {
+  .tele-grid {
     display: grid;
-    grid-template-columns: 185px 1fr 165px;
-    gap: 6px;
+    grid-template-columns: 195px 1fr 180px;
+    gap: 8px;
     margin-top: 6px;
     flex: 1;
     min-height: 0;
     position: relative;
   }
 
-  .ws-panel {
-    background: var(--ws-panel-bg);
-    border: 1px solid var(--ws-border);
-    padding: 6px;
+  .tele-panel {
+    background: var(--bc-panel-bg);
+    border: 2px solid var(--bc-border-light);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 2px 2px 5px rgba(0,0,0,0.4);
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
-  .panel-title {
-    color: var(--ws-amber);
+  .panel-header-banner {
+    background: linear-gradient(90deg, #1d2c54 0%, #2f437c 50%, #1d2c54 100%);
+    color: var(--bc-gold);
     font-size: 1.05rem;
-    border-bottom: 1px dashed var(--ws-border);
+    font-weight: 700;
+    text-align: center;
+    padding: 2px 0;
     margin-bottom: 6px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    border-top: 1px solid #4a63a3;
+    border-bottom: 1px solid #0f172a;
+    text-shadow: 1px 1px 2px #000;
   }
 
-  /* Current Weather Readouts */
-  .temp-display {
-    font-size: 2.8rem;
-    color: var(--ws-amber);
+  /* Current Weather Display */
+  .temp-container {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 2px 0;
+  }
+
+  .temp-val {
+    font-size: 3.2rem;
+    font-weight: 700;
+    color: #ffffff;
     line-height: 0.9;
-    margin: 2px 0 4px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
   }
 
-  .cond-display {
-    color: var(--ws-phosphor);
-    font-size: 1.05rem;
+  .cond-val {
+    color: var(--bc-text-yellow);
+    font-size: 1.15rem;
+    font-weight: 700;
     margin-bottom: 8px;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 1px 1px 2px #000;
   }
 
   .metric-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9rem;
-    margin-bottom: 3px;
-    color: var(--ws-dim);
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+    color: var(--bc-text-dim);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 1px;
   }
 
-  .metric-val {
-    color: var(--ws-white);
-  }
+  .metric-label { font-weight: 600; }
+  .metric-val { color: #ffffff; font-weight: 700; }
 
-  /* Center Stage Container */
+  /* Center Stage Window */
   .center-stage {
     position: relative;
     width: 100%;
     height: 100%;
-    background: #080a10;
-    border: 1px solid var(--ws-border);
+    background: #080c17;
+    border: 1px solid #2d3e6b;
     overflow: hidden;
   }
 
-  canvas#ws-center-canvas {
+  canvas#tele-center-canvas {
     width: 100%;
     height: 100%;
     display: block;
   }
 
-  .stage-badge {
+  .stage-banner {
     position: absolute;
     top: 4px;
     left: 4px;
-    color: var(--ws-amber);
+    color: #ffffff;
     font-size: 0.8rem;
-    background: rgba(12, 15, 23, 0.85);
-    padding: 1px 6px;
-    border: 1px solid var(--ws-border);
+    font-weight: 700;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid var(--bc-border-light);
+    padding: 2px 8px;
     letter-spacing: 1px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.6);
   }
 
-  /* Outlook Panel */
-  .forecast-item {
+  /* Forecast Panel Styling */
+  .forecast-card {
+    background: rgba(15, 22, 41, 0.6);
+    border: 1px solid #2d3b66;
+    padding: 4px 6px;
     margin-bottom: 6px;
   }
 
-  .forecast-day {
-    color: var(--ws-amber);
+  .forecast-day-head {
+    display: flex;
+    justify-content: space-between;
+    color: var(--bc-gold);
+    font-weight: 700;
     font-size: 0.95rem;
+    border-bottom: 1px dashed rgba(255,255,255,0.15);
+    padding-bottom: 2px;
+    margin-bottom: 2px;
   }
 
-  .forecast-desc {
+  .forecast-temp-range {
+    font-size: 0.9rem;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .forecast-cond-text {
     font-size: 0.85rem;
-    line-height: 1.1;
-    color: var(--ws-dim);
+    color: var(--bc-text-dim);
   }
 
-  /* Bottom Scrolling Ticker */
-  .ws-ticker-container {
+  /* Bottom Scrolling Ticker Marquee */
+  .tele-ticker-wrap {
     margin-top: 6px;
-    background: #080a10;
-    border: 1px solid var(--ws-border);
-    color: var(--ws-amber);
-    font-size: 1.05rem;
-    height: 28px;
+    background: linear-gradient(180deg, #111a33 0%, #090e1f 100%);
+    border: 2px solid var(--bc-border-light);
+    height: 32px;
     display: flex;
     align-items: center;
     overflow: hidden;
     position: relative;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
   }
 
-  .ws-ticker-text {
+  .ticker-header-chip {
+    background: var(--bc-gold);
+    color: #000;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    z-index: 5;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.6);
+    letter-spacing: 1px;
+  }
+
+  .tele-ticker-text {
     white-space: nowrap;
     position: absolute;
     will-change: transform;
+    font-family: var(--font-mono);
+    color: var(--bc-text-yellow);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px #000;
   }
 
-  /* Rich Detailed Recap Overlay */
+  /* Fullscreen Recap Overlay */
   .recap-overlay {
     display: none;
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(12, 15, 23, 0.97);
-    border: 1px solid var(--ws-amber);
-    padding: 16px;
-    z-index: 100;
+    background: linear-gradient(135deg, rgba(14, 20, 38, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%);
+    border: 3px solid var(--bc-gold);
+    padding: 20px;
+    z-index: 150;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
   }
 
-  .recap-overlay.active {
-    display: flex;
-  }
+  .recap-overlay.active { display: flex; }
 
   .recap-slide-title {
-    color: var(--ws-amber);
-    font-size: 1.6rem;
-    margin-bottom: 8px;
-    border-bottom: 1px solid var(--ws-amber);
+    color: var(--bc-gold);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--bc-gold);
     padding-bottom: 4px;
     width: 85%;
     letter-spacing: 2px;
+    text-shadow: 2px 2px 4px #000;
   }
 
   .recap-slide-body {
-    font-size: 1.25rem;
-    color: var(--ws-white);
+    font-size: 1.35rem;
+    color: var(--bc-text-white);
     line-height: 1.4;
     max-width: 90%;
+    text-shadow: 1px 1px 3px #000;
   }
 </style>
 </head>
 <body>
 
-<div class="star4000-frame">
+<div class="telecast-frame">
   <div class="crt-overlay"></div>
 
+  <!-- Late 80s / Early 90s Broadcast Intro Screen -->
+  <div class="intro-screen" id="intro-modal">
+    <div class="vhs-header-tag">PLAY ► [SLP] 0:00:12 — SANGAMON VALLEY TELEMETRY</div>
+    
+    <div class="intro-title-box">
+      <div class="intro-channel-num">CHANNEL 2</div>
+      <div class="intro-banner-text">Good Evening Forecast</div>
+      <div class="intro-subtext">SANGAMON VALLEY REGIONAL WEATHER SERVICE</div>
+    </div>
+
+    <button class="start-telecast-btn" onclick="dismissIntro()">START TELECAST</button>
+  </div>
+
   <!-- Header Bar -->
-  <div class="ws-header">
-    <span id="ws-location-banner">SANGAMON VALLEY TELEMETRY</span>
+  <div class="tele-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="tele-logo-badge">SVR 2</div>
+      <span class="tele-title" id="tele-location-banner">SANGAMON VALLEY TELECAST</span>
+    </div>
     <div class="header-actions">
       <button class="recap-btn" onclick="triggerRecap()">▶ RECAP</button>
-      <span id="ws-clock">12:00:00 PM</span>
+      <span class="tele-clock" id="tele-clock">12:00:00 PM</span>
     </div>
   </div>
 
   <!-- Main Grid -->
-  <div class="ws-grid">
+  <div class="tele-grid">
     <!-- Fullscreen Detailed Recap Modal -->
     <div class="recap-overlay" id="recap-modal">
       <div class="recap-slide-title" id="recap-title">WEATHER RECAP</div>
@@ -288,41 +476,44 @@
     </div>
 
     <!-- Left Panel: Conditions -->
-    <div class="ws-panel">
-      <div class="panel-title">CURRENT</div>
-      <div class="temp-display" id="val-temp">--°F</div>
-      <div class="cond-display" id="val-cond">FETCHING...</div>
+    <div class="tele-panel">
+      <div class="panel-header-banner">CONDITIONS</div>
+      <div class="temp-container">
+        <div class="temp-val" id="val-temp">--°</div>
+      </div>
+      <div class="cond-val" id="val-cond">FETCHING...</div>
       
-      <div class="metric-row"><span>FEELS LIKE:</span><span class="metric-val" id="val-feels">--°F</span></div>
-      <div class="metric-row"><span>HUMIDITY:</span><span class="metric-val" id="val-hum">--%</span></div>
-      <div class="metric-row"><span>DEWPOINT:</span><span class="metric-val" id="val-dew">--°F</span></div>
-      <div class="metric-row"><span>BAROMETER:</span><span class="metric-val" id="val-baro">--.--</span></div>
-      <div class="metric-row"><span>WINDS:</span><span class="metric-val" id="val-wind">-- --MPH</span></div>
+      <div class="metric-row"><span class="metric-label">FEELS LIKE</span><span class="metric-val" id="val-feels">--°</span></div>
+      <div class="metric-row"><span class="metric-label">HUMIDITY</span><span class="metric-val" id="val-hum">--%</span></div>
+      <div class="metric-row"><span class="metric-label">DEWPOINT</span><span class="metric-val" id="val-dew">--°</span></div>
+      <div class="metric-row"><span class="metric-label">BAROMETER</span><span class="metric-val" id="val-baro">--.--</span></div>
+      <div class="metric-row"><span class="metric-label">WINDS</span><span class="metric-val" id="val-wind">-- --MPH</span></div>
     </div>
 
-    <!-- Center Stage: Pixel Art / Regional Map Toggler -->
-    <div class="ws-panel" style="padding: 2px;">
+    <!-- Center Stage Panel -->
+    <div class="tele-panel" style="padding: 3px;">
       <div class="center-stage">
-        <div class="stage-badge" id="stage-label">ILLINOIS REGIONAL</div>
-        <canvas id="ws-center-canvas"></canvas>
+        <div class="stage-banner" id="stage-label">ILLINOIS REGIONAL RADAR</div>
+        <canvas id="tele-center-canvas"></canvas>
       </div>
     </div>
 
     <!-- Right Panel: Outlook -->
-    <div class="ws-panel">
-      <div class="panel-title">3-DAY OUTLOOK</div>
+    <div class="tele-panel">
+      <div class="panel-header-banner">3-DAY OUTLOOK</div>
       <div id="forecast-container">
-        <div class="forecast-item">
-          <div class="forecast-day">LOADING...</div>
-          <div class="forecast-desc">--</div>
+        <div class="forecast-card">
+          <div class="forecast-day-head"><span>LOADING...</span><span class="forecast-temp-range">--° / --°</span></div>
+          <div class="forecast-cond-text">PLEASE WAIT</div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Bottom Ticker -->
-  <div class="ws-ticker-container">
-    <div class="ws-ticker-text" id="ticker-text">LOADING LOCAL SANGAMON VALLEY TELEMETRY...</div>
+  <div class="tele-ticker-wrap">
+    <div class="ticker-header-chip">SVR BULLETIN</div>
+    <div class="tele-ticker-text" id="ticker-text">LOADING LOCAL SANGAMON VALLEY TELEMETRY...</div>
   </div>
 </div>
 
@@ -337,8 +528,13 @@
   };
 
   let weatherStore = {};
-  let currentStageMode = "map"; // Set default to map for layout inspection
+  let currentStageMode = "map";
   let availableVoices = [];
+
+  function dismissIntro() {
+    const intro = document.getElementById('intro-modal');
+    intro.classList.add('hidden');
+  }
 
   function loadVoices() {
     if ('speechSynthesis' in window) {
@@ -350,10 +546,10 @@
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
 
-  /* Clock & Ticker */
+  /* Clock & Marquee Ticker */
   function updateClock() {
     const now = new Date();
-    document.getElementById('ws-clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    document.getElementById('tele-clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
   setInterval(updateClock, 1000);
   updateClock();
@@ -361,7 +557,7 @@
   const tickerTextEl = document.getElementById('ticker-text');
   let tickerPos = window.innerWidth;
   function animateTicker() {
-    tickerPos -= 1.0;
+    tickerPos -= 1.1;
     if (tickerPos < -tickerTextEl.clientWidth) {
       tickerPos = tickerTextEl.parentElement.clientWidth;
     }
@@ -373,10 +569,10 @@
   /* Toggle Center Stage View Mode */
   setInterval(() => {
     currentStageMode = currentStageMode === "pixel" ? "map" : "pixel";
-    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "COZY AMBIENT SCENE" : "ILLINOIS REGIONAL";
+    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "AMBIENT COZY SCENE" : "ILLINOIS REGIONAL RADAR";
   }, WS_CONFIG.toggleStageMs);
 
-  /* OpenWeather Telemetry */
+  /* OpenWeather Telemetry Data Fetch */
   async function fetchWeatherData() {
     try {
       const queryParams = new URLSearchParams({
@@ -397,17 +593,17 @@
       weatherStore = { cur, fcast };
 
       const locName = cur.name ? cur.name.toUpperCase() : "SPRINGFIELD";
-      document.getElementById('ws-location-banner').innerText = `${locName} FORECAST`;
+      document.getElementById('tele-location-banner').innerText = `${locName} FORECAST`;
 
-      document.getElementById('val-temp').innerText = `${Math.round(cur.main.temp)}°F`;
+      document.getElementById('val-temp').innerText = `${Math.round(cur.main.temp)}°`;
       document.getElementById('val-cond').innerText = (cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "CLEAR";
-      document.getElementById('val-feels').innerText = `${Math.round(cur.main.feels_like)}°F`;
+      document.getElementById('val-feels').innerText = `${Math.round(cur.main.feels_like)}°`;
       document.getElementById('val-hum').innerText = `${cur.main.humidity}%`;
       
       const tempF = cur.main.temp;
       const rh = cur.main.humidity;
       const dewF = Math.round(tempF - ((100 - rh) / 5));
-      document.getElementById('val-dew').innerText = `${dewF}°F`;
+      document.getElementById('val-dew').innerText = `${dewF}°`;
 
       const baroInHg = (cur.main.pressure * 0.02953).toFixed(2);
       document.getElementById('val-baro').innerText = `${baroInHg}IN`;
@@ -446,21 +642,24 @@
         const maxPop = Math.round(Math.max(...dayData.pops) * 100);
         const desc = dayData.conditions[0] ? dayData.conditions[0].toUpperCase() : "--";
 
-        const item = document.createElement('div');
-        item.className = 'forecast-item';
-        item.innerHTML = `
-          <div class="forecast-day">${dayName} • <span style="color:var(--ws-phosphor);">${maxPop}% RAIN</span></div>
-          <div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>
+        const card = document.createElement('div');
+        card.className = 'forecast-card';
+        card.innerHTML = `
+          <div class="forecast-day-head">
+            <span>${dayName}</span>
+            <span class="forecast-temp-range">H ${high}° / L ${low}°</span>
+          </div>
+          <div class="forecast-cond-text">${desc} • ${maxPop}% PRECIP</div>
         `;
-        forecastContainer.appendChild(item);
+        forecastContainer.appendChild(card);
       });
 
-      const tickerMsg = `LOCAL FORECAST FOR ${locName}... ` +
-                        `TEMP ${Math.round(cur.main.temp)}°F (FEELS LIKE ${Math.round(cur.main.feels_like)}°F)... ` +
+      const tickerMsg = `SANGAMON VALLEY TELECAST FOR ${locName}... ` +
+                        `CURRENT TEMP ${Math.round(cur.main.temp)}°F... ` +
                         `HUMIDITY ${cur.main.humidity}%... ` +
-                        `BAROMETER ${baroInHg} IN... ` +
+                        `BAROMETER ${baroInHg} INCHES... ` +
                         `WINDS ${windDir} AT ${windSpeed} MPH... ` +
-                        `OVERNIGHT CONDITIONS: ${(cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "QUIET & CLEAR"}...`;
+                        `EXPECT ${(cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "QUIET CONDITIONS"} OVERNIGHT...`;
       document.getElementById('ticker-text').innerText = tickerMsg;
 
     } catch (err) {
@@ -471,7 +670,7 @@
   fetchWeatherData();
   setInterval(fetchWeatherData, WS_CONFIG.refreshMs);
 
-  /* Dynamic Event-Driven Recap Engine */
+  /* Dynamic Voice Narrated Weather Recap */
   let isRecapActive = false;
 
   function speakAndFollowUp(text, onComplete) {
@@ -483,8 +682,8 @@
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     
-    utterance.pitch = 0.65;
-    utterance.rate = 0.88;
+    utterance.pitch = 0.70;
+    utterance.rate = 0.90;
 
     if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     const deepVoice = availableVoices.find(v => 
@@ -499,13 +698,8 @@
 
     if (deepVoice) utterance.voice = deepVoice;
 
-    utterance.onend = () => {
-      setTimeout(onComplete, 1500);
-    };
-
-    utterance.onerror = () => {
-      setTimeout(onComplete, 2000);
-    };
+    utterance.onend = () => { setTimeout(onComplete, 1400); };
+    utterance.onerror = () => { setTimeout(onComplete, 2000); };
 
     window.speechSynthesis.speak(utterance);
   }
@@ -527,8 +721,8 @@
 
     function runSlide1() {
       title.innerText = "CURRENT CONDITIONS";
-      body.innerHTML = `<span style="font-size:2.2rem; color:var(--ws-amber);">${temp}°F</span><br>` +
-                       `<span style="color:var(--ws-phosphor);">${cond.toUpperCase()}</span><br>` +
+      body.innerHTML = `<span style="font-size:2.4rem; color:var(--bc-gold); font-weight:700;">${temp}°F</span><br>` +
+                       `<span style="color:var(--bc-text-yellow); font-weight:700;">${cond.toUpperCase()}</span><br>` +
                        `FEELS LIKE ${Math.round(weatherStore.cur.main.feels_like)}°F • HUMIDITY ${weatherStore.cur.main.humidity}%<br>` +
                        `WINDS ${windSpeed} MPH`;
       speakAndFollowUp(
@@ -539,30 +733,30 @@
 
     function runSlide2() {
       title.innerText = "LOCAL NARRATIVE";
-      body.innerHTML = `LOCAL SUMMARY FOR ${locName.toUpperCase()}:<br>` +
-                       `<span style="color:var(--ws-white);">${cond} with temperatures near ${temp} degrees. Humidity is running at ${weatherStore.cur.main.humidity} percent.</span>`;
+      body.innerHTML = `SUMMARY FOR ${locName.toUpperCase()}:<br>` +
+                       `<span style="color:var(--bc-text-white);">${cond} with temperatures near ${temp} degrees. Relative humidity is holding at ${weatherStore.cur.main.humidity} percent.</span>`;
       speakAndFollowUp(
-        `Here is your local summary. Expect ${cond} with temperatures holding around ${temp} degrees throughout the area.`,
+        `Here is your local forecast summary. Expect ${cond} with temperatures holding near ${temp} degrees across the Sangamon Valley.`,
         runSlide3
       );
     }
 
     function runSlide3() {
-      title.innerText = "REGIONAL TELEMETRY";
+      title.innerText = "REGIONAL RADAR TELEMETRY";
       body.innerHTML = `SPRINGFIELD: ${temp}°F<br>` +
                        `DECATUR: ${temp - 1}°F • LINCOLN: ${temp + 1}°F<br>` +
                        `JACKSONVILLE: ${temp}°F • BLOOMINGTON: ${temp - 2}°F`;
       speakAndFollowUp(
-        `Looking across central Illinois, Springfield is at ${temp} degrees, Decatur at ${temp - 1}, and Bloomington at ${temp - 2}.`,
+        `Across Central Illinois, Springfield is reporting ${temp} degrees, Decatur ${temp - 1}, and Bloomington ${temp - 2}.`,
         runSlide4
       );
     }
 
     function runSlide4() {
-      title.innerText = "EXTENDED OUTLOOK";
-      body.innerHTML = `3-DAY OUTLOOK AVAILABLE ON MAIN DISPLAY.<br><span style="color:var(--ws-amber);">STAY TUNED FOR CONTINUOUS LOCAL TELEMETRY.</span>`;
+      title.innerText = "EXTENDED TELECAST";
+      body.innerHTML = `3-DAY OUTLOOK AVAILABLE ON MAIN DISPLAY.<br><span style="color:var(--bc-gold);">THANK YOU FOR WATCHING CHANNEL 2 TELECAST.</span>`;
       speakAndFollowUp(
-        `That concludes your Local on the 8s recap. Stay tuned for continuous local telemetry.`,
+        `That concludes your Local on the 8s telecast recap. Stay tuned for continuous regional weather telemetry.`,
         finishRecap
       );
     }
@@ -576,8 +770,8 @@
     runSlide1();
   }
 
-  /* Center Stage Renderer */
-  const canvas = document.getElementById('ws-center-canvas');
+  /* Center Stage Graphic Renderer */
+  const canvas = document.getElementById('tele-center-canvas');
   const ctx = canvas.getContext('2d');
 
   function resizeCanvas() {
@@ -614,36 +808,30 @@
     let sunX = w * 0.75;
     let sunY = h * 0.3;
     let isNight = false;
-    let hillColorNear = '#111828';
-    let hillColorFar = '#090d16';
+    let hillColorNear = '#1a274c';
+    let hillColorFar = '#0d162d';
 
     if (hour >= 5 && hour < 8) {
-      skyGrad.addColorStop(0, '#2d1e3e');
-      skyGrad.addColorStop(0.5, '#8b4367');
-      skyGrad.addColorStop(1, '#ff8e53');
+      skyGrad.addColorStop(0, '#36234d');
+      skyGrad.addColorStop(0.5, '#994a73');
+      skyGrad.addColorStop(1, '#ff9658');
       sunY = h * 0.45;
-      hillColorNear = '#23192e';
-      hillColorFar = '#150f1d';
     } else if (hour >= 8 && hour < 18) {
-      skyGrad.addColorStop(0, '#1b4965');
-      skyGrad.addColorStop(0.6, '#62b6cb');
-      skyGrad.addColorStop(1, '#bee9e8');
+      skyGrad.addColorStop(0, '#1c3d6e');
+      skyGrad.addColorStop(0.6, '#488eb3');
+      skyGrad.addColorStop(1, '#97cadb');
       sunY = h * 0.2;
-      hillColorNear = '#1a3a2a';
-      hillColorFar = '#0f241a';
+      hillColorNear = '#23422e';
+      hillColorFar = '#122619';
     } else if (hour >= 18 && hour < 21) {
-      skyGrad.addColorStop(0, '#1a102f');
-      skyGrad.addColorStop(0.5, '#721b46');
-      skyGrad.addColorStop(1, '#d95d39');
+      skyGrad.addColorStop(0, '#21133b');
+      skyGrad.addColorStop(0.5, '#822452');
+      skyGrad.addColorStop(1, '#e0653d');
       sunY = h * 0.5;
-      hillColorNear = '#1f1024';
-      hillColorFar = '#110814';
     } else {
       isNight = true;
-      skyGrad.addColorStop(0, '#0a0d1a');
-      skyGrad.addColorStop(1, '#1b2238');
-      hillColorNear = '#111828';
-      hillColorFar = '#090d16';
+      skyGrad.addColorStop(0, '#0c1024');
+      skyGrad.addColorStop(1, '#1a2242');
     }
 
     ctx.fillStyle = skyGrad;
@@ -652,20 +840,11 @@
     if (isNight) {
       ctx.fillStyle = '#ffeaad';
       ctx.fillRect(w - 45, 15, 18, 18);
-      ctx.fillStyle = '#0a0d1a';
+      ctx.fillStyle = '#0c1024';
       ctx.fillRect(w - 39, 15, 12, 18);
     } else {
       ctx.fillStyle = '#fff3b0';
       ctx.fillRect(sunX, sunY, 16, 16);
-    }
-
-    if (isNight && !weatherMain.includes('rain') && !weatherMain.includes('cloud')) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      for (let i = 0; i < 10; i++) {
-        const sx = (i * 31 + animFrame * 0.1) % w;
-        const sy = (i * 17) % (h * 0.5);
-        ctx.fillRect(sx, sy, 2, 2);
-      }
     }
 
     ctx.fillStyle = hillColorNear;
@@ -680,7 +859,7 @@
 
     const houseX = 35;
     const houseY = h - 45;
-    ctx.fillStyle = '#05070d';
+    ctx.fillStyle = '#080d1a';
     ctx.fillRect(houseX, houseY, 32, 25);
     
     ctx.beginPath();
@@ -689,36 +868,18 @@
     ctx.lineTo(houseX + 36, houseY);
     ctx.fill();
 
-    if (isNight || hour < 8 || hour >= 18 || weatherMain.includes('rain')) {
-      const glow = Math.sin(animFrame * 0.05) * 0.15 + 0.85;
-      ctx.fillStyle = `rgba(255, 183, 3, ${glow})`;
-      ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
-      ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
-    } else {
-      ctx.fillStyle = '#3a4a5b';
-      ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
-      ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
-    }
+    const glow = Math.sin(animFrame * 0.05) * 0.15 + 0.85;
+    ctx.fillStyle = `rgba(252, 192, 16, ${glow})`;
+    ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
+    ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
 
-    if (weatherMain.includes('rain') || weatherMain.includes('drizzle') || weatherMain.includes('thunderstorm')) {
+    if (weatherMain.includes('rain') || weatherMain.includes('drizzle')) {
       ctx.fillStyle = 'rgba(160, 210, 255, 0.6)';
       for (let i = 0; i < 25; i++) {
         const rx = (i * 17 + animFrame * 3) % w;
         const ry = (i * 13 + animFrame * 7) % h;
         ctx.fillRect(rx, ry, 1, 6);
       }
-    } else if (weatherMain.includes('cloud') || weatherMain.includes('overcast')) {
-      ctx.fillStyle = isNight ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.4)';
-      const cx1 = (animFrame * 0.3) % (w + 60) - 60;
-      ctx.fillRect(cx1, 20, 40, 10);
-      ctx.fillRect(cx1 + 10, 15, 20, 5);
-
-      const cx2 = (animFrame * 0.2 + 100) % (w + 80) - 80;
-      ctx.fillRect(cx2, 35, 50, 12);
-    } else if (weatherMain.includes('fog') || weatherMain.includes('mist')) {
-      ctx.fillStyle = 'rgba(200, 220, 240, 0.2)';
-      ctx.fillRect(0, h - 30, w, 8);
-      ctx.fillRect(0, h - 15, w, 12);
     }
   }
 
@@ -726,15 +887,17 @@
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.fillStyle = '#0a0e17';
+    // Deep Broadcast Blue Radar Background
+    ctx.fillStyle = '#10172e';
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = '#162235';
+    // Subtle Grid Overlay
+    ctx.strokeStyle = '#1b274a';
     ctx.lineWidth = 1;
-    for (let x = 0; x < w; x += 16) {
+    for (let x = 0; x < w; x += 18) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-    for (let y = 0; y < h; y += 16) {
+    for (let y = 0; y < h; y += 18) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
@@ -746,8 +909,8 @@
     function toY(normY) { return offsetY + normY * mapScale * 0.90; }
 
     // Lake Michigan
-    ctx.fillStyle = '#102238';
-    ctx.strokeStyle = '#2b4c73';
+    ctx.fillStyle = '#162847';
+    ctx.strokeStyle = '#325285';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(toX(0.70), toY(0.00));
@@ -758,7 +921,7 @@
     ctx.fill();
     ctx.stroke();
 
-    // Illinois State Outline
+    // State Boundary
     const ilBoundary = [
       {x: 0.68, y: 0.06},
       {x: 0.68, y: 0.20},
@@ -775,8 +938,8 @@
       {x: 0.68, y: 0.06}
     ];
 
-    ctx.fillStyle = '#111a2a';
-    ctx.strokeStyle = '#3a506b';
+    ctx.fillStyle = '#1a264a';
+    ctx.strokeStyle = '#4a65a8';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ilBoundary.forEach((pt, i) => {
@@ -789,25 +952,29 @@
     ctx.fill();
     ctx.stroke();
 
-    // Interstate/Highways (I-55 / I-72)
-    ctx.strokeStyle = 'rgba(255, 183, 3, 0.25)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-
+    // Simulated Radar Sweep Rings / Precipitation Clusters
+    const sweepX = toX(0.50);
+    const sweepY = toY(0.48);
+    const sweepRadius = (animFrame * 1.2) % (mapScale * 0.45);
+    
+    ctx.strokeStyle = 'rgba(55, 235, 52, 0.25)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(toX(0.36), toY(0.76));
-    ctx.lineTo(toX(0.44), toY(0.53));
-    ctx.lineTo(toX(0.56), toY(0.38));
-    ctx.lineTo(toX(0.68), toY(0.20));
+    ctx.arc(sweepX, sweepY, sweepRadius, 0, Math.PI * 2);
     ctx.stroke();
 
+    // Precipitation Echo Blobs (Classic Radar Palette: Green / Yellow / Red)
+    const p1X = toX(0.52);
+    const p1Y = toY(0.44);
+    const grad1 = ctx.createRadialGradient(p1X, p1Y, 4, p1X, p1Y, 28);
+    grad1.addColorStop(0, 'rgba(255, 30, 30, 0.7)');
+    grad1.addColorStop(0.4, 'rgba(255, 230, 0, 0.6)');
+    grad1.addColorStop(0.8, 'rgba(55, 235, 52, 0.4)');
+    grad1.addColorStop(1, 'rgba(55, 235, 52, 0)');
+    ctx.fillStyle = grad1;
     ctx.beginPath();
-    ctx.moveTo(toX(0.30), toY(0.55));
-    ctx.lineTo(toX(0.44), toY(0.53));
-    ctx.lineTo(toX(0.58), toY(0.52));
-    ctx.stroke();
-
-    ctx.setLineDash([]);
+    ctx.arc(p1X, p1Y, 28, 0, Math.PI * 2);
+    ctx.fill();
 
     const curTemp = weatherStore.cur ? Math.round(weatherStore.cur.main.temp) : 79;
 
@@ -827,10 +994,10 @@
       const ty = toY(t.y);
 
       // Node Marker
-      ctx.fillStyle = '#ffb703';
+      ctx.fillStyle = '#fcc010';
       ctx.fillRect(tx - 2, ty - 2, 5, 5);
 
-      ctx.font = '11px "VT323", monospace';
+      ctx.font = '700 11px "Archivo Narrow", sans-serif';
       
       let textX = tx + 6;
       let textY = ty + t.offsetY;
@@ -850,14 +1017,15 @@
       ctx.fillText(t.name, textX, textY);
 
       // Render Temperature Readout directly below name
-      ctx.fillStyle = '#55ff99';
+      ctx.fillStyle = '#ffea00';
       ctx.fillText(t.temp, textX, textY + 11);
     });
 
+    // Radar Legend
     ctx.textAlign = "left";
-    ctx.font = '10px "VT323", monospace';
-    ctx.fillStyle = '#8d99ae';
-    ctx.fillText("STATE REGION: IL / CENTRAL VALLEY", 8, h - 8);
+    ctx.font = '600 10px "Archivo Narrow", sans-serif';
+    ctx.fillStyle = '#9fb1d1';
+    ctx.fillText("RADAR RADIAL: SVR-3 RADAR NETWORK", 8, h - 8);
   }
 
   renderCenterStage();
