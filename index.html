@@ -242,7 +242,7 @@
 
   <!-- Bottom Ticker -->
   <div class="ws-ticker-container">
-    <div class="ws-ticker-text" id="ticker-text">INITIALIZING WEATHERSTAR 4000 TELEMETRY... FETCHING LOCAL OPENWEATHER FEED...</div>
+    <div class="ws-ticker-text" id="ticker-text">INITIALIZING WEATHERSTAR 4000 TELEMETRY... CONNECTING TO OPENWEATHER...</div>
   </div>
 </div>
 
@@ -251,10 +251,9 @@
      CONFIG - HARDCODED FOR DEDICATED IPHONE 6S DISPLAY
      ========================================================================= */
   const WS_CONFIG = {
-    apiKey: "5c2023567ce4ee49c2d715cc37bd75f0", // Replace with your OpenWeather API Key
-    lat: 39.7817,                       // Your latitude
-    lon: -89.6501,                      // Your longitude
-    locationName: "SPRINGFIELD",
+    apiKey: "5c2023567ce4ee49c2d715cc37bd75f0", // OpenWeather API Key
+    lat: 39.7817,                       // Springfield, IL Latitude
+    lon: -89.6501,                      // Springfield, IL Longitude
     units: "imperial",
     refreshMs: 600000                   // 10-minute auto refresh rate
   };
@@ -269,7 +268,6 @@
   setInterval(updateClock, 1000);
   updateClock();
 
-  // Smooth custom JS ticker to replace deprecated <marquee>
   const tickerTextEl = document.getElementById('ticker-text');
   let tickerPos = window.innerWidth;
   
@@ -287,27 +285,40 @@
      WEATHERSTAR API INTEGRATION (OPENWEATHER)
      ========================================================================= */
   async function fetchWeatherData() {
-    if (!WS_CONFIG.apiKey) {
-      document.getElementById('val-cond').innerText = "NO API KEY";
-      document.getElementById('ticker-text').innerText = "PLEASE INSERT A VALID OPENWEATHER API KEY INTO WS_CONFIG IN CODE.";
-      return;
-    }
-
     try {
+      // Build safe parameters to prevent encoding artifacts
+      const queryParams = new URLSearchParams({
+        lat: WS_CONFIG.lat,
+        lon: WS_CONFIG.lon,
+        units: WS_CONFIG.units,
+        appid: WS_CONFIG.apiKey
+      });
+
       // 1. Fetch Current Conditions
-      const curRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${WS_CONFIG.lat}&lon=${WS_CONFIG.lon}&units=${WS_CONFIG.units}&appid=${WS_CONFIG.apiKey}`);
+      const curRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?${queryParams.toString()}`);
+      
+      if (!curRes.ok) {
+        const errData = await curRes.json().catch(() => ({}));
+        throw new Error(`CURRENT API ${curRes.status}: ${errData.message || curRes.statusText}`);
+      }
       const cur = await curRes.json();
 
       // 2. Fetch 5-Day / 3-Hour Forecast
-      const fcastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${WS_CONFIG.lat}&lon=${WS_CONFIG.lon}&units=${WS_CONFIG.units}&appid=${WS_CONFIG.apiKey}`);
+      const fcastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?${queryParams.toString()}`);
+      
+      if (!fcastRes.ok) {
+        const errData = await fcastRes.json().catch(() => ({}));
+        throw new Error(`FORECAST API ${fcastRes.status}: ${errData.message || fcastRes.statusText}`);
+      }
       const fcast = await fcastRes.json();
 
       // Update UI Header Location
-      document.getElementById('ws-location-banner').innerText = `${cur.name.toUpperCase()} FORECAST`;
+      const locName = cur.name ? cur.name.toUpperCase() : "SPRINGFIELD";
+      document.getElementById('ws-location-banner').innerText = `${locName} FORECAST`;
 
       // Update Left Panel Readouts
       document.getElementById('val-temp').innerText = `${Math.round(cur.main.temp)}°F`;
-      document.getElementById('val-cond').innerText = cur.weather[0].description.toUpperCase();
+      document.getElementById('val-cond').innerText = (cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "UNKNOWN";
       document.getElementById('val-hum').innerText = `${cur.main.humidity}%`;
       
       // Calculate Dew Point approximation
@@ -322,11 +333,12 @@
 
       // Wind direction vector mapping
       const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-      const windDir = dirs[Math.round(cur.wind.deg / 45) % 8];
-      document.getElementById('val-wind').innerText = `${windDir} ${Math.round(cur.wind.speed)}MPH`;
+      const windDir = cur.wind ? dirs[Math.round((cur.wind.deg || 0) / 45) % 8] : "N";
+      const windSpeed = cur.wind ? Math.round(cur.wind.speed || 0) : 0;
+      document.getElementById('val-wind').innerText = `${windDir} ${windSpeed}MPH`;
 
       // Visibility converting meters to miles
-      const visMiles = Math.round(cur.visibility / 1609.34);
+      const visMiles = cur.visibility ? Math.round(cur.visibility / 1609.34) : "--";
       document.getElementById('val-vis').innerText = `${visMiles} MI`;
 
       // Update Right Panel Outlook
@@ -334,34 +346,38 @@
       forecastContainer.innerHTML = '';
       
       // Filter 12:00 PM slices for distinct daily predictions
-      const dailySlices = fcast.list.filter(item => item.dt_txt.includes("12:00:00")).slice(0, 3);
+      const dailySlices = fcast.list ? fcast.list.filter(item => item.dt_txt && item.dt_txt.includes("12:00:00")).slice(0, 3) : [];
       const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-      dailySlices.forEach(slice => {
-        const d = new Date(slice.dt * 1000);
-        const dayName = days[d.getDay()];
-        const desc = slice.weather[0].main.toUpperCase();
-        const high = Math.round(slice.main.temp_max);
-        const low = Math.round(slice.main.temp_min);
+      if (dailySlices.length > 0) {
+        dailySlices.forEach(slice => {
+          const d = new Date(slice.dt * 1000);
+          const dayName = days[d.getDay()];
+          const desc = (slice.weather && slice.weather[0]) ? slice.weather[0].main.toUpperCase() : "--";
+          const high = Math.round(slice.main.temp_max);
+          const low = Math.round(slice.main.temp_min);
 
-        const item = document.createElement('div');
-        item.className = 'forecast-item';
-        item.innerHTML = `<div class="forecast-day">${dayName}</div><div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>`;
-        forecastContainer.appendChild(item);
-      });
+          const item = document.createElement('div');
+          item.className = 'forecast-item';
+          item.innerHTML = `<div class="forecast-day">${dayName}</div><div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>`;
+          forecastContainer.appendChild(item);
+        });
+      } else {
+        forecastContainer.innerHTML = '<div class="forecast-item"><div class="forecast-day">OUTLOOK</div><div class="forecast-desc">UNAVAILABLE</div></div>';
+      }
 
       // Update Ticker Text
-      const tickerMsg = `LOCAL FORECAST FOR ${cur.name.toUpperCase()}... ` +
+      const tickerMsg = `LOCAL FORECAST FOR ${locName}... ` +
                         `CURRENT TEMP ${Math.round(cur.main.temp)}°F... ` +
                         `HUMIDITY ${cur.main.humidity}%... ` +
                         `BAROMETER ${baroInHg} INCHES... ` +
-                        `WINDS ${windDir} AT ${Math.round(cur.wind.speed)} MPH... ` +
-                        `CONDITIONS: ${cur.weather[0].description.toUpperCase()}...`;
+                        `WINDS ${windDir} AT ${windSpeed} MPH... ` +
+                        `CONDITIONS: ${(cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "CLEAR"}...`;
       document.getElementById('ticker-text').innerText = tickerMsg;
 
     } catch (err) {
       console.error("OpenWeather Fetch Error:", err);
-      document.getElementById('ticker-text').innerText = "ERROR UPDATING TELEMETRY FEED... RETRYING AUTOMATICALLY...";
+      document.getElementById('ticker-text').innerText = `TELEMETRY ERROR: ${err.message.toUpperCase()}`;
     }
   }
 
@@ -399,13 +415,13 @@
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
 
-    // Echo Blob 1 (Green precipitation area)
+    // Echo Blob 1
     ctx.fillStyle = 'rgba(0, 200, 80, 0.45)';
     ctx.beginPath();
     ctx.arc(cx + 25, cy - 15, 30, 0, Math.PI * 2);
     ctx.fill();
 
-    // Echo Blob 2 (Yellow core intensity)
+    // Echo Blob 2
     ctx.fillStyle = 'rgba(230, 230, 0, 0.55)';
     ctx.beginPath();
     ctx.arc(cx + 30, cy - 12, 14, 0, Math.PI * 2);
