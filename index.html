@@ -40,7 +40,6 @@
     align-items: center;
   }
 
-  /* iPhone 6s Landscape Canvas Boundary */
   .star4000-frame {
     width: 100vw;
     height: 100vh;
@@ -55,7 +54,7 @@
     box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
   }
 
-  /* Retro Top Banner */
+  /* Header Bar & Recap Button */
   .ws-header {
     background: var(--ws-header-grad);
     border: 2px solid #ffffff;
@@ -63,15 +62,38 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 2px 10px;
-    font-size: 1.4rem;
+    padding: 2px 8px;
+    font-size: 1.3rem;
     font-weight: bold;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     text-shadow: 1px 1px 0px #fff;
-    height: 32px;
+    height: 34px;
   }
 
-  /* Primary Grid layout */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .recap-btn {
+    background: #000;
+    color: var(--ws-gold);
+    border: 1px solid #fff;
+    font-family: 'VT323', monospace;
+    font-size: 0.95rem;
+    padding: 1px 6px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 1px 1px 0px #000;
+  }
+
+  .recap-btn:active {
+    background: var(--ws-gold);
+    color: #000;
+  }
+
+  /* Primary Grid Layout */
   .ws-grid {
     display: grid;
     grid-template-columns: 190px 1fr 160px;
@@ -79,6 +101,7 @@
     margin-top: 6px;
     flex: 1;
     min-height: 0;
+    position: relative;
   }
 
   .ws-panel {
@@ -131,13 +154,13 @@
     color: var(--ws-cyan);
   }
 
-  /* Center Screen Radar Container */
+  /* Subtle CRT Radar Display */
   .radar-frame {
     position: relative;
     width: 100%;
     height: 100%;
-    background: #000d21;
-    border: 1px solid var(--ws-cyan);
+    background: #000814;
+    border: 1px solid var(--ws-border);
     overflow: hidden;
   }
 
@@ -153,13 +176,13 @@
     top: 4px;
     left: 4px;
     color: var(--ws-cyan);
-    font-size: 0.85rem;
-    background: rgba(0,0,0,0.75);
+    font-size: 0.8rem;
+    background: rgba(0,0,0,0.85);
     padding: 1px 4px;
-    border: 1px solid #005577;
+    border: 1px solid #004466;
   }
 
-  /* Extended Outlook Panel */
+  /* Extended Outlook */
   .forecast-item {
     margin-bottom: 6px;
   }
@@ -175,7 +198,7 @@
     color: #fff;
   }
 
-  /* Bottom Scrolling Ticker Tape */
+  /* Bottom Scrolling Ticker */
   .ws-ticker-container {
     margin-top: 6px;
     background: #000;
@@ -194,6 +217,43 @@
     position: absolute;
     will-change: transform;
   }
+
+  /* Recap Overlay Slide */
+  .recap-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ws-panel-bg);
+    border: 2px solid var(--ws-gold);
+    padding: 16px;
+    z-index: 100;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .recap-overlay.active {
+    display: flex;
+  }
+
+  .recap-slide-title {
+    color: var(--ws-gold);
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--ws-gold);
+    padding-bottom: 4px;
+    width: 80%;
+  }
+
+  .recap-slide-body {
+    font-size: 1.4rem;
+    color: #fff;
+    line-height: 1.4;
+  }
 </style>
 </head>
 <body>
@@ -202,12 +262,21 @@
   <!-- Top Banner -->
   <div class="ws-header">
     <span id="ws-location-banner">LOCAL FORECAST</span>
-    <span id="ws-clock">12:00:00 PM</span>
+    <div class="header-actions">
+      <button class="recap-btn" onclick="triggerRecap()">▶ RECAP</button>
+      <span id="ws-clock">12:00:00 PM</span>
+    </div>
   </div>
 
   <!-- Main Telemetry Grid -->
   <div class="ws-grid">
-    <!-- Left Panel: Current Weather -->
+    <!-- Fullscreen Recap Modal -->
+    <div class="recap-overlay" id="recap-modal">
+      <div class="recap-slide-title" id="recap-title">WEATHER RECAP</div>
+      <div class="recap-slide-body" id="recap-body">INITIALIZING RECAP...</div>
+    </div>
+
+    <!-- Left Panel: Conditions -->
     <div class="ws-panel">
       <div class="panel-title">CONDITIONS</div>
       <div class="temp-display" id="val-temp">--°F</div>
@@ -220,15 +289,15 @@
       <div class="metric-row"><span>VISIB:</span><span class="metric-val" id="val-vis">-- MI</span></div>
     </div>
 
-    <!-- Center Panel: WeatherSTAR Radar Sweep -->
+    <!-- Center Panel: Ambient Radar Sweep -->
     <div class="ws-panel" style="padding: 2px;">
       <div class="radar-frame">
-        <div class="radar-overlay" id="radar-status">RADAR LOOP • LOCAL AREA</div>
+        <div class="radar-overlay">RADAR LOOP</div>
         <canvas id="ws-radar"></canvas>
       </div>
     </div>
 
-    <!-- Right Panel: 3-Day Extended Outlook -->
+    <!-- Right Panel: 3-Day Outlook -->
     <div class="ws-panel">
       <div class="panel-title">3-DAY OUTLOOK</div>
       <div id="forecast-container">
@@ -242,25 +311,21 @@
 
   <!-- Bottom Ticker -->
   <div class="ws-ticker-container">
-    <div class="ws-ticker-text" id="ticker-text">INITIALIZING WEATHERSTAR 4000 TELEMETRY... CONNECTING TO OPENWEATHER...</div>
+    <div class="ws-ticker-text" id="ticker-text">INITIALIZING WEATHERSTAR 4000 TELEMETRY...</div>
   </div>
 </div>
 
 <script>
-  /* =========================================================================
-     CONFIG - HARDCODED FOR DEDICATED IPHONE 6S DISPLAY
-     ========================================================================= */
   const WS_CONFIG = {
-    apiKey: "5c2023567ce4ee49c2d715cc37bd75f0", // OpenWeather API Key
-    lat: 39.7817,                       // Springfield, IL Latitude
-    lon: -89.6501,                      // Springfield, IL Longitude
+    apiKey: "5c2023567ce4ee49c2d715cc37bd75f0",
+    lat: 39.7817,
+    lon: -89.6501,
     units: "imperial",
-    refreshMs: 600000                   // 10-minute auto refresh rate
+    refreshMs: 600000
   };
 
-  /* =========================================================================
-     CLOCK & TICKER CONTROLLER
-     ========================================================================= */
+  let weatherStore = {};
+
   function updateClock() {
     const now = new Date();
     document.getElementById('ws-clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -272,7 +337,7 @@
   let tickerPos = window.innerWidth;
   
   function animateTicker() {
-    tickerPos -= 1.2;
+    tickerPos -= 1.1;
     if (tickerPos < -tickerTextEl.clientWidth) {
       tickerPos = tickerTextEl.parentElement.clientWidth;
     }
@@ -281,12 +346,8 @@
   }
   animateTicker();
 
-  /* =========================================================================
-     WEATHERSTAR API INTEGRATION (OPENWEATHER)
-     ========================================================================= */
   async function fetchWeatherData() {
     try {
-      // Build safe parameters to prevent encoding artifacts
       const queryParams = new URLSearchParams({
         lat: WS_CONFIG.lat,
         lon: WS_CONFIG.lon,
@@ -294,79 +355,58 @@
         appid: WS_CONFIG.apiKey
       });
 
-      // 1. Fetch Current Conditions
       const curRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?${queryParams.toString()}`);
-      
-      if (!curRes.ok) {
-        const errData = await curRes.json().catch(() => ({}));
-        throw new Error(`CURRENT API ${curRes.status}: ${errData.message || curRes.statusText}`);
-      }
+      if (!curRes.ok) throw new Error(`CURRENT API ${curRes.status}`);
       const cur = await curRes.json();
 
-      // 2. Fetch 5-Day / 3-Hour Forecast
       const fcastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?${queryParams.toString()}`);
-      
-      if (!fcastRes.ok) {
-        const errData = await fcastRes.json().catch(() => ({}));
-        throw new Error(`FORECAST API ${fcastRes.status}: ${errData.message || fcastRes.statusText}`);
-      }
+      if (!fcastRes.ok) throw new Error(`FORECAST API ${fcastRes.status}`);
       const fcast = await fcastRes.json();
 
-      // Update UI Header Location
-      const locName = cur.name ? cur.name.toUpperCase() : "SPRINGFIELD";
+      weatherStore = { cur, fcast };
+
+      const locName = cur.name ? cur.name.toUpperCase() : "SANGAMON";
       document.getElementById('ws-location-banner').innerText = `${locName} FORECAST`;
 
-      // Update Left Panel Readouts
       document.getElementById('val-temp').innerText = `${Math.round(cur.main.temp)}°F`;
       document.getElementById('val-cond').innerText = (cur.weather && cur.weather[0]) ? cur.weather[0].description.toUpperCase() : "UNKNOWN";
       document.getElementById('val-hum').innerText = `${cur.main.humidity}%`;
       
-      // Calculate Dew Point approximation
       const tempF = cur.main.temp;
       const rh = cur.main.humidity;
       const dewF = Math.round(tempF - ((100 - rh) / 5));
       document.getElementById('val-dew').innerText = `${dewF}°F`;
 
-      // Barometer converting hPa to inHg
       const baroInHg = (cur.main.pressure * 0.02953).toFixed(2);
       document.getElementById('val-baro').innerText = `${baroInHg}IN`;
 
-      // Wind direction vector mapping
       const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
       const windDir = cur.wind ? dirs[Math.round((cur.wind.deg || 0) / 45) % 8] : "N";
       const windSpeed = cur.wind ? Math.round(cur.wind.speed || 0) : 0;
       document.getElementById('val-wind').innerText = `${windDir} ${windSpeed}MPH`;
 
-      // Visibility converting meters to miles
       const visMiles = cur.visibility ? Math.round(cur.visibility / 1609.34) : "--";
       document.getElementById('val-vis').innerText = `${visMiles} MI`;
 
-      // Update Right Panel Outlook
       const forecastContainer = document.getElementById('forecast-container');
       forecastContainer.innerHTML = '';
       
-      // Filter 12:00 PM slices for distinct daily predictions
       const dailySlices = fcast.list ? fcast.list.filter(item => item.dt_txt && item.dt_txt.includes("12:00:00")).slice(0, 3) : [];
       const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-      if (dailySlices.length > 0) {
-        dailySlices.forEach(slice => {
-          const d = new Date(slice.dt * 1000);
-          const dayName = days[d.getDay()];
-          const desc = (slice.weather && slice.weather[0]) ? slice.weather[0].main.toUpperCase() : "--";
-          const high = Math.round(slice.main.temp_max);
-          const low = Math.round(slice.main.temp_min);
+      dailySlices.forEach(slice => {
+        const d = new Date(slice.dt * 1000);
+        const dayName = days[d.getDay()];
+        const desc = (slice.weather && slice.weather[0]) ? slice.weather[0].main.toUpperCase() : "--";
+        const high = Math.round(slice.main.temp_max);
+        const low = Math.round(slice.main.temp_min);
 
-          const item = document.createElement('div');
-          item.className = 'forecast-item';
-          item.innerHTML = `<div class="forecast-day">${dayName}</div><div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>`;
-          forecastContainer.appendChild(item);
-        });
-      } else {
-        forecastContainer.innerHTML = '<div class="forecast-item"><div class="forecast-day">OUTLOOK</div><div class="forecast-desc">UNAVAILABLE</div></div>';
-      }
+        const item = document.createElement('div');
+        item.className = 'forecast-item';
+        item.innerHTML = `<div class="forecast-day">${dayName}</div><div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>`;
+        forecastContainer.appendChild(item);
+      });
 
-      // Update Ticker Text
       const tickerMsg = `LOCAL FORECAST FOR ${locName}... ` +
                         `CURRENT TEMP ${Math.round(cur.main.temp)}°F... ` +
                         `HUMIDITY ${cur.main.humidity}%... ` +
@@ -376,7 +416,6 @@
       document.getElementById('ticker-text').innerText = tickerMsg;
 
     } catch (err) {
-      console.error("OpenWeather Fetch Error:", err);
       document.getElementById('ticker-text').innerText = `TELEMETRY ERROR: ${err.message.toUpperCase()}`;
     }
   }
@@ -384,9 +423,42 @@
   fetchWeatherData();
   setInterval(fetchWeatherData, WS_CONFIG.refreshMs);
 
-  /* =========================================================================
-     CANVAS RETRO RADAR ANIMATION ENGINE
-     ========================================================================= */
+  /* Interactive Timed Recap */
+  let isRecapActive = false;
+  function triggerRecap() {
+    if (isRecapActive || !weatherStore.cur) return;
+    isRecapActive = true;
+
+    const modal = document.getElementById('recap-modal');
+    const title = document.getElementById('recap-title');
+    const body = document.getElementById('recap-body');
+
+    modal.classList.add('active');
+
+    // Slide 1: Current
+    title.innerText = "CURRENT CONDITIONS";
+    body.innerHTML = `${Math.round(weatherStore.cur.main.temp)}°F<br><span style="color: var(--ws-cyan);">${weatherStore.cur.weather[0].description.toUpperCase()}</span><br>WINDS ${weatherStore.cur.wind.speed} MPH`;
+
+    // Slide 2: Radar Summary
+    setTimeout(() => {
+      title.innerText = "REGIONAL RADAR";
+      body.innerHTML = `PRECIPITATION: NONE DETECTED<br><span style="color: var(--ws-cyan);">SWEEP CLEAR OVER LOCAL SANGAMON AREA</span>`;
+    }, 4000);
+
+    // Slide 3: Extended
+    setTimeout(() => {
+      title.innerText = "EXTENDED OUTLOOK";
+      body.innerHTML = `NEXT 3 DAYS<br><span style="color: var(--ws-gold);">CHECK FULL GRID FOR DAILY HIGHS & LOWS</span>`;
+    }, 8000);
+
+    // Return to main layout
+    setTimeout(() => {
+      modal.classList.remove('active');
+      isRecapActive = false;
+    }, 12000);
+  }
+
+  /* Slow CRT Radar Animation */
   const canvas = document.getElementById('ws-radar');
   const ctx = canvas.getContext('2d');
 
@@ -399,43 +471,36 @@
 
   let sweepAngle = 0;
   function renderRadar() {
-    ctx.fillStyle = '#000f24';
+    // Soft trailing fade effect
+    ctx.fillStyle = 'rgba(0, 10, 25, 0.12)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Grid matrix
-    ctx.strokeStyle = '#003366';
-    ctx.lineWidth = 1;
-    for(let x = 0; x < canvas.width; x += 20) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-    }
-    for(let y = 0; y < canvas.height; y += 20) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
 
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
 
-    // Echo Blob 1
-    ctx.fillStyle = 'rgba(0, 200, 80, 0.45)';
-    ctx.beginPath();
-    ctx.arc(cx + 25, cy - 15, 30, 0, Math.PI * 2);
-    ctx.fill();
+    // Grid lines
+    ctx.strokeStyle = 'rgba(0, 60, 120, 0.25)';
+    ctx.lineWidth = 1;
+    for(let x = 0; x < canvas.width; x += 15) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for(let y = 0; y < canvas.height; y += 15) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
 
-    // Echo Blob 2
-    ctx.fillStyle = 'rgba(230, 230, 0, 0.55)';
-    ctx.beginPath();
-    ctx.arc(cx + 30, cy - 12, 14, 0, Math.PI * 2);
-    ctx.fill();
+    // Static ambient echo targets
+    ctx.fillStyle = 'rgba(0, 180, 70, 0.25)';
+    ctx.beginPath(); ctx.arc(cx + 18, cy - 10, 18, 0, Math.PI * 2); ctx.fill();
 
-    // Rotating Radar Line Sweep
-    ctx.strokeStyle = '#00ffaa';
-    ctx.lineWidth = 2;
+    // Slow sweep beam
+    ctx.strokeStyle = 'rgba(0, 255, 170, 0.7)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(sweepAngle) * 180, cy + Math.sin(sweepAngle) * 180);
+    ctx.lineTo(cx + Math.cos(sweepAngle) * 120, cy + Math.sin(sweepAngle) * 120);
     ctx.stroke();
 
-    sweepAngle += 0.035;
+    sweepAngle += 0.012; // Slow, relaxed sweep pace
     requestAnimationFrame(renderRadar);
   }
   renderRadar();
