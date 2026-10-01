@@ -80,7 +80,7 @@
   .intro-screen {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, #12102e 0%, #291a4c 50%, #0d091a 100%);
+    background: linear-gradient(135deg, #09081a 0%, #1e133a 50%, #080612 100%);
     z-index: 200;
     display: flex;
     flex-direction: column;
@@ -88,6 +88,7 @@
     align-items: center;
     padding: 24px;
     transition: opacity 0.8s ease, visibility 0.8s ease;
+    perspective: 1000px;
   }
 
   .intro-screen.hidden {
@@ -107,19 +108,41 @@
 
   .intro-title-box {
     text-align: center;
-    transform: skewX(-6deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
+  /* Retro 3D Animated Channel 2 Logo */
   .intro-channel-num {
-    font-size: 4.8rem;
-    font-weight: 800;
+    font-size: 5.2rem;
+    font-weight: 900;
     font-style: italic;
-    line-height: 0.8;
-    background: linear-gradient(180deg, #ffffff 0%, #a3b8e0 50%, #465b8c 100%);
+    line-height: 0.85;
+    background: linear-gradient(180deg, #ffffff 0%, #d0e1ff 35%, #4b6fae 70%, #1e2e50 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(4px 4px 0px #0a0814);
+    filter: drop-shadow(0px 8px 15px rgba(0, 180, 255, 0.4));
     letter-spacing: -2px;
+    display: inline-block;
+    animation: channelIntroSpin 6s ease-in-out infinite alternate;
+    transform-style: preserve-3d;
+    position: relative;
+  }
+
+  @keyframes channelIntroSpin {
+    0% {
+      transform: rotateY(-25deg) rotateX(10deg) translateY(0px) scale(0.95);
+      filter: drop-shadow(-8px 10px 12px rgba(0,0,0,0.8));
+    }
+    50% {
+      transform: rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.05);
+      filter: drop-shadow(0px 12px 20px rgba(0, 150, 255, 0.6));
+    }
+    100% {
+      transform: rotateY(25deg) rotateX(-10deg) translateY(0px) scale(0.95);
+      filter: drop-shadow(8px 10px 12px rgba(0,0,0,0.8));
+    }
   }
 
   .intro-banner-text {
@@ -129,14 +152,15 @@
     color: var(--bc-gold);
     letter-spacing: 3px;
     text-shadow: 2px 2px 4px #000;
-    margin-top: 6px;
+    margin-top: 10px;
   }
 
   .intro-subtext {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #d1dcf0;
     letter-spacing: 1.5px;
     margin-top: 4px;
+    font-weight: 600;
   }
 
   .start-telecast-btn {
@@ -442,7 +466,7 @@
 <div class="telecast-frame">
   <div class="crt-overlay"></div>
 
-  <!-- Late 80s / Early 90s Broadcast Intro Screen -->
+  <!-- Broadcast Intro Screen with Animated Channel 2 Logo -->
   <div class="intro-screen" id="intro-modal">
     <div class="vhs-header-tag">PLAY ► [SLP] 0:00:12 — SANGAMON VALLEY TELEMETRY</div>
     
@@ -670,7 +694,7 @@
   fetchWeatherData();
   setInterval(fetchWeatherData, WS_CONFIG.refreshMs);
 
-  /* Dynamic Voice Narrated Weather Recap */
+  /* Authentic Broadcast Voice Narrated Weather Recap */
   let isRecapActive = false;
 
   function speakAndFollowUp(text, onComplete) {
@@ -726,7 +750,7 @@
                        `FEELS LIKE ${Math.round(weatherStore.cur.main.feels_like)}°F • HUMIDITY ${weatherStore.cur.main.humidity}%<br>` +
                        `WINDS ${windSpeed} MPH`;
       speakAndFollowUp(
-        `Currently in ${locName}, it is ${temp} degrees with ${cond}. Winds are at ${windSpeed} miles per hour.`,
+        `Welcome to your Channel 2 Weather Telecast. Currently in ${locName}, it is ${temp} degrees with ${cond}. Winds are out of the regional sector at ${windSpeed} miles per hour.`,
         runSlide2
       );
     }
@@ -736,7 +760,7 @@
       body.innerHTML = `SUMMARY FOR ${locName.toUpperCase()}:<br>` +
                        `<span style="color:var(--bc-text-white);">${cond} with temperatures near ${temp} degrees. Relative humidity is around ${weatherStore.cur.main.humidity} percent.</span>`;
       speakAndFollowUp(
-        `Here is your local forecast summary. Expect ${cond} with temperatures near ${temp} degrees across the Sangamon Valley.`,
+        `Taking a look at our local narrative across the Sangamon Valley area: Expect ${cond} to remain through the forecast period with local temperatures staying steady near ${temp} degrees.`,
         runSlide3
       );
     }
@@ -747,7 +771,7 @@
                        `DECATUR: ${temp - 1}°F • LINCOLN: ${temp + 1}°F<br>` +
                        `JACKSONVILLE: ${temp}°F • BLOOMINGTON: ${temp - 2}°F`;
       speakAndFollowUp(
-        `Across Central Illinois, Springfield is reporting ${temp} degrees, Decatur ${temp - 1}, and Bloomington ${temp - 2}.`,
+        `Checking regional conditions across Central Illinois: Springfield is currently holding at ${temp} degrees, Decatur is at ${temp - 1}, and Bloomington is reporting ${temp - 2}.`,
         runSlide4
       );
     }
@@ -756,7 +780,7 @@
       title.innerText = "EXTENDED TELECAST";
       body.innerHTML = `3-DAY OUTLOOK AVAILABLE ON MAIN DISPLAY.<br><span style="color:var(--bc-gold);">THANK YOU FOR WATCHING CHANNEL 2 TELECAST.</span>`;
       speakAndFollowUp(
-        `That concludes your Local weather telecast recap. Stay tuned for continuous regional weather telemetry.`,
+        `That concludes this edition of your local weather recap. Stay tuned to Channel 2 for continuous regional weather telecast updates.`,
         finishRecap
       );
     }
@@ -952,7 +976,7 @@
     ctx.fill();
     ctx.stroke();
 
-    // Simulated Radar Sweep Rings / Precipitation Clusters
+    // Radar Sweep Ring
     const sweepX = toX(0.50);
     const sweepY = toY(0.48);
     const sweepRadius = (animFrame * 1.2) % (mapScale * 0.45);
@@ -978,7 +1002,7 @@
 
     const curTemp = weatherStore.cur ? Math.round(weatherStore.cur.main.temp) : 79;
 
-    /* City Nodes with Spatial Label Offsets to Prevent Text Collisions */
+    /* City Nodes with Spatial Label Offsets */
     const towns = [
       { name: "CHICAGO",      x: 0.67, y: 0.20, temp: `${curTemp - 3}°`, align: "left",  offsetY: 2 },
       { name: "BLOOMINGTON",  x: 0.56, y: 0.38, temp: `${curTemp - 2}°`, align: "left",  offsetY: 2 },
@@ -1016,20 +1040,13 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillText(t.name, textX, textY);
 
-      // Render Temperature Readout directly below name
+      // Render Temperature Readout
       ctx.fillStyle = '#ffea00';
       ctx.fillText(t.temp, textX, textY + 11);
     });
-
-    // Radar Legend
-    ctx.textAlign = "left";
-    ctx.font = '600 10px "Archivo Narrow", sans-serif';
-    ctx.fillStyle = '#9fb1d1';
-    ctx.fillText("RADAR RADIAL: SVR-3 RADAR NETWORK", 8, h - 8);
   }
 
   renderCenterStage();
 </script>
-
 </body>
 </html>
