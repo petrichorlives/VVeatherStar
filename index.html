@@ -164,7 +164,7 @@
     color: var(--ws-white);
   }
 
-  /* Center Stage Container (Pixel Art & Regional Map Canvas) */
+  /* Center Stage Container */
   .center-stage {
     position: relative;
     width: 100%;
@@ -333,7 +333,7 @@
     lon: -89.6501,
     units: "imperial",
     refreshMs: 600000,
-    toggleStageMs: 300000 // Switch center canvas mode every 5 minutes
+    toggleStageMs: 300000 // Switch center stage every 5 minutes
   };
 
   let weatherStore = {};
@@ -359,13 +359,13 @@
   }
   animateTicker();
 
-  /* Toggle Center Stage View Mode Every 5 Minutes */
+  /* Toggle Center Stage View Mode */
   setInterval(() => {
     currentStageMode = currentStageMode === "pixel" ? "map" : "pixel";
-    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "COZY AMBIENT SCENE" : "REGIONAL TEMPS";
+    document.getElementById('stage-label').innerText = currentStageMode === "pixel" ? "COZY AMBIENT SCENE" : "ILLINOIS REGIONAL";
   }, WS_CONFIG.toggleStageMs);
 
-  /* OpenWeather Telemetry */
+  /* OpenWeather Telemetry & Aggregated Daily Calculations */
   async function fetchWeatherData() {
     try {
       const queryParams = new URLSearchParams({
@@ -406,23 +406,42 @@
       const windSpeed = cur.wind ? Math.round(cur.wind.speed || 0) : 0;
       document.getElementById('val-wind').innerText = `${windDir} ${windSpeed}MPH`;
 
+      // Group 3-hour forecast blocks by day to calculate true daily highs, lows, & rain chances
+      const dailyMap = {};
+      fcast.list.forEach(item => {
+        const dateStr = new Date(item.dt * 1000).toLocaleDateString('en-US');
+        if (!dailyMap[dateStr]) {
+          dailyMap[dateStr] = {
+            temps: [],
+            pops: [],
+            conditions: [],
+            date: new Date(item.dt * 1000)
+          };
+        }
+        dailyMap[dateStr].temps.push(item.main.temp_max, item.main.temp_min);
+        dailyMap[dateStr].pops.push(item.pop || 0);
+        if (item.weather && item.weather[0]) {
+          dailyMap[dateStr].conditions.push(item.weather[0].main);
+        }
+      });
+
       const forecastContainer = document.getElementById('forecast-container');
       forecastContainer.innerHTML = '';
-      
-      const dailySlices = fcast.list ? fcast.list.filter(item => item.dt_txt && item.dt_txt.includes("12:00:00")).slice(0, 3) : [];
       const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-      dailySlices.forEach(slice => {
-        const d = new Date(slice.dt * 1000);
-        const dayName = days[d.getDay()];
-        const desc = (slice.weather && slice.weather[0]) ? slice.weather[0].main.toUpperCase() : "--";
-        const high = Math.round(slice.main.temp_max);
-        const low = Math.round(slice.main.temp_min);
-        const pop = Math.round((slice.pop || 0) * 100);
+      Object.values(dailyMap).slice(0, 3).forEach(dayData => {
+        const dayName = days[dayData.date.getDay()];
+        const high = Math.round(Math.max(...dayData.temps));
+        const low = Math.round(Math.min(...dayData.temps));
+        const maxPop = Math.round(Math.max(...dayData.pops) * 100);
+        const desc = dayData.conditions[0] ? dayData.conditions[0].toUpperCase() : "--";
 
         const item = document.createElement('div');
         item.className = 'forecast-item';
-        item.innerHTML = `<div class="forecast-day">${dayName} • <span style="color:var(--ws-phosphor);">${pop}% RAIN</span></div><div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>`;
+        item.innerHTML = `
+          <div class="forecast-day">${dayName} • <span style="color:var(--ws-phosphor);">${maxPop}% RAIN</span></div>
+          <div class="forecast-desc">${desc} H ${high}° / L ${low}°</div>
+        `;
         forecastContainer.appendChild(item);
       });
 
@@ -454,21 +473,21 @@
 
     modal.classList.add('active');
 
-    // Slide 1: Current Telemetry Deep Dive
+    // Slide 1
     title.innerText = "CURRENT CONDITIONS";
     body.innerHTML = `<span style="font-size:2.2rem; color:var(--ws-amber);">${Math.round(weatherStore.cur.main.temp)}°F</span><br>` +
                      `<span style="color:var(--ws-phosphor);">${weatherStore.cur.weather[0].description.toUpperCase()}</span><br>` +
                      `FEELS LIKE ${Math.round(weatherStore.cur.main.feels_like)}°F • HUMIDITY ${weatherStore.cur.main.humidity}%<br>` +
                      `WINDS ${weatherStore.cur.wind.speed} MPH`;
 
-    // Slide 2: Detailed Natural Language Narrative
+    // Slide 2
     setTimeout(() => {
       title.innerText = "LOCAL NARRATIVE";
       body.innerHTML = `OVERNIGHT IN ${weatherStore.cur.name ? weatherStore.cur.name.toUpperCase() : "SANGAMON VALLEY"}:<br>` +
                        `<span style="color:var(--ws-white);">${weatherStore.cur.weather[0].description.toLowerCase()} with temperatures steady near ${Math.round(weatherStore.cur.main.temp)}°F. Winds out of the ${weatherStore.cur.wind.deg || 0}° vector at ${Math.round(weatherStore.cur.wind.speed)} mph.</span>`;
     }, 4000);
 
-    // Slide 3: Regional Overview
+    // Slide 3
     setTimeout(() => {
       title.innerText = "REGIONAL TELEMETRY";
       body.innerHTML = `SPRINGFIELD: ${Math.round(weatherStore.cur.main.temp)}°F<br>` +
@@ -476,20 +495,20 @@
                        `JACKSONVILLE: ${Math.round(weatherStore.cur.main.temp)}°F • BLOOMINGTON: ${Math.round(weatherStore.cur.main.temp - 2)}°F`;
     }, 8000);
 
-    // Slide 4: Extended Outlook
+    // Slide 4
     setTimeout(() => {
       title.innerText = "EXTENDED OUTLOOK";
       body.innerHTML = `NEXT 3 DAYS LOOK QUIET.<br><span style="color:var(--ws-amber);">SEE MAIN BOARD FOR COMPLETE HIGH/LOW RANGES.</span>`;
     }, 12000);
 
-    // Return to main layout
+    // Return to main screen
     setTimeout(() => {
       modal.classList.remove('active');
       isRecapActive = false;
     }, 16000);
   }
 
-  /* Center Stage Renderer (Pixel Art Scene vs Classic Regional Map) */
+  /* Canvas Renderer (Pixel Scene vs Illinois Regional Map) */
   const canvas = document.getElementById('ws-center-canvas');
   const ctx = canvas.getContext('2d');
 
@@ -529,7 +548,7 @@
     ctx.fillStyle = '#ffeaad';
     ctx.fillRect(w - 45, 15, 18, 18);
     ctx.fillStyle = '#0a0d1a';
-    ctx.fillRect(w - 39, 15, 12, 18); // Crescent shape
+    ctx.fillRect(w - 39, 15, 12, 18);
 
     // Rolling Hills
     ctx.fillStyle = '#111828';
@@ -542,26 +561,24 @@
     ctx.ellipse(w * 0.7, h + 15, w * 0.5, 40, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cozy House Silhouette with Glowing Window
+    // Cozy House Silhouette with Glowing Windows
     const houseX = 35;
     const houseY = h - 45;
     ctx.fillStyle = '#05070d';
-    ctx.fillRect(houseX, houseY, 32, 25); // House body
+    ctx.fillRect(houseX, houseY, 32, 25);
     
-    // Roof
     ctx.beginPath();
     ctx.moveTo(houseX - 4, houseY);
     ctx.lineTo(houseX + 16, houseY - 14);
     ctx.lineTo(houseX + 36, houseY);
     ctx.fill();
 
-    // Warm Window Glow (pulsing softly)
     const glow = Math.sin(animFrame * 0.05) * 0.15 + 0.85;
     ctx.fillStyle = `rgba(255, 183, 3, ${glow})`;
     ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
     ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
 
-    // Gentle Floating Ambient Stars/Particles
+    // Ambient Particles / Stars
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     for (let i = 0; i < 8; i++) {
       const sx = (i * 37 + animFrame * 0.2) % w;
@@ -574,44 +591,123 @@
     const w = canvas.width;
     const h = canvas.height;
 
-    // Vintage Map Background
-    ctx.fillStyle = '#0e1420';
+    // Background
+    ctx.fillStyle = '#0a0e17';
     ctx.fillRect(0, 0, w, h);
 
-    // Grid matrix
-    ctx.strokeStyle = '#1b2538';
+    // Matrix Grid
+    ctx.strokeStyle = '#162235';
     ctx.lineWidth = 1;
-    for(let x = 0; x < w; x += 20) {
+    for (let x = 0; x < w; x += 16) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-    for(let y = 0; y < h; y += 20) {
+    for (let y = 0; y < h; y += 16) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
+    const mapScale = Math.min(w, h);
+    const offsetX = w * 0.18;
+    const offsetY = h * 0.05;
+
+    function toX(normX) { return offsetX + normX * mapScale * 0.85; }
+    function toY(normY) { return offsetY + normY * mapScale * 0.90; }
+
+    // Lake Michigan Vector
+    ctx.fillStyle = '#102238';
+    ctx.strokeStyle = '#2b4c73';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(toX(0.70), toY(0.00));
+    ctx.lineTo(toX(0.70), toY(0.18));
+    ctx.bezierCurveTo(toX(0.68), toY(0.25), toX(0.78), toY(0.24), toX(0.85), toY(0.18));
+    ctx.lineTo(toX(0.85), toY(0.00));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Illinois Vector Boundary Coordinates
+    const ilBoundary = [
+      {x: 0.68, y: 0.06},
+      {x: 0.68, y: 0.20},
+      {x: 0.70, y: 0.26},
+      {x: 0.70, y: 0.72},
+      {x: 0.60, y: 0.86},
+      {x: 0.48, y: 0.88},
+      {x: 0.38, y: 0.78},
+      {x: 0.26, y: 0.60},
+      {x: 0.18, y: 0.45},
+      {x: 0.28, y: 0.30},
+      {x: 0.36, y: 0.18},
+      {x: 0.38, y: 0.06},
+      {x: 0.68, y: 0.06}
+    ];
+
+    // Render State Area
+    ctx.fillStyle = '#111a2a';
+    ctx.strokeStyle = '#3a506b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ilBoundary.forEach((pt, i) => {
+      const px = toX(pt.x);
+      const py = toY(pt.y);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Major Highways (I-55 & I-72)
+    ctx.strokeStyle = 'rgba(255, 183, 3, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+
+    ctx.beginPath();
+    ctx.moveTo(toX(0.36), toY(0.76));
+    ctx.lineTo(toX(0.44), toY(0.53));
+    ctx.lineTo(toX(0.56), toY(0.38));
+    ctx.lineTo(toX(0.68), toY(0.20));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(toX(0.30), toY(0.55));
+    ctx.lineTo(toX(0.44), toY(0.53));
+    ctx.lineTo(toX(0.58), toY(0.52));
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    // Surrounding Cities & Live Temperatures
     const curTemp = weatherStore.cur ? Math.round(weatherStore.cur.main.temp) : 72;
 
-    // Surrounding Regional Towns
     const towns = [
-      { name: "SPRINGFIELD", x: w * 0.45, y: h * 0.52, temp: `${curTemp}°` },
-      { name: "DECATUR", x: w * 0.75, y: h * 0.45, temp: `${curTemp - 1}°` },
-      { name: "LINCOLN", x: w * 0.48, y: h * 0.22, temp: `${curTemp + 1}°` },
-      { name: "JACKSONVILLE", x: w * 0.18, y: h * 0.62, temp: `${curTemp}°` },
-      { name: "BLOOMINGTON", x: w * 0.72, y: h * 0.18, temp: `${curTemp - 2}°` }
+      { name: "SPRINGFIELD", x: 0.44, y: 0.53, temp: `${curTemp}°` },
+      { name: "DECATUR",     x: 0.58, y: 0.52, temp: `${curTemp - 1}°` },
+      { name: "LINCOLN",     x: 0.48, y: 0.42, temp: `${curTemp + 1}°` },
+      { name: "JACKSONVILLE",x: 0.30, y: 0.55, temp: `${curTemp}°` },
+      { name: "BLOOMINGTON", x: 0.56, y: 0.38, temp: `${curTemp - 2}°` },
+      { name: "CHICAGO",     x: 0.67, y: 0.20, temp: `${curTemp - 3}°` },
+      { name: "ST. LOUIS",   x: 0.34, y: 0.77, temp: `${curTemp + 2}°` }
     ];
 
     towns.forEach(t => {
-      // Dot marker
-      ctx.fillStyle = '#ffb703';
-      ctx.fillRect(t.x - 2, t.y - 2, 4, 4);
+      const tx = toX(t.x);
+      const ty = toY(t.y);
 
-      // Label & Temp
+      ctx.fillStyle = '#ffb703';
+      ctx.fillRect(tx - 2, ty - 2, 5, 5);
+
       ctx.font = '12px "VT323", monospace';
-      ctx.fillStyle = '#e0e6ed';
-      ctx.fillText(t.name, t.x + 6, t.y + 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(t.name, tx + 6, ty + 2);
 
       ctx.fillStyle = '#55ff99';
-      ctx.fillText(t.temp, t.x + 6, t.y + 13);
+      ctx.fillText(t.temp, tx + 6, ty + 13);
     });
+
+    ctx.font = '10px "VT323", monospace';
+    ctx.fillStyle = '#8d99ae';
+    ctx.fillText("STATE REGION: IL / CENTRAL VALLEY", 8, h - 8);
   }
 
   renderCenterStage();
