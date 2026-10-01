@@ -338,6 +338,18 @@
 
   let weatherStore = {};
   let currentStageMode = "pixel"; // "pixel" or "map"
+  let availableVoices = [];
+
+  // Initialize Speech Voices
+  function loadVoices() {
+    if ('speechSynthesis' in window) {
+      availableVoices = window.speechSynthesis.getVoices();
+    }
+  }
+  loadVoices();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
 
   /* Clock & Ticker */
   function updateClock() {
@@ -461,17 +473,46 @@
   fetchWeatherData();
   setInterval(fetchWeatherData, WS_CONFIG.refreshMs);
 
-  /* 20-Second "Local on the 8s" Narrated Recap Engine */
+  /* Dynamic Event-Driven "Local on the 8s" Narrated Recap Engine */
   let isRecapActive = false;
 
-  function speakText(text) {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Stop active speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95; // Steady weather broadcast pace
-      utterance.pitch = 0.9; // Lower classic TV broadcast tone
-      window.speechSynthesis.speak(utterance);
+  function speakAndFollowUp(text, onComplete) {
+    if (!('speechSynthesis' in window)) {
+      setTimeout(onComplete, 4000);
+      return;
     }
+
+    window.speechSynthesis.cancel(); // Stop active speech
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Low Pitch + Smooth Rate for 90s TV Broadcast Voice
+    utterance.pitch = 0.65;
+    utterance.rate = 0.88;
+
+    // Pick deep/male system voice if available
+    if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
+    const deepVoice = availableVoices.find(v => 
+      v.lang.startsWith('en') && (
+        v.name.includes('Daniel') || 
+        v.name.includes('David') || 
+        v.name.includes('Alex') || 
+        v.name.includes('Male') || 
+        v.name.includes('Natural')
+      )
+    ) || availableVoices.find(v => v.lang.startsWith('en'));
+
+    if (deepVoice) utterance.voice = deepVoice;
+
+    // Advance dynamically when speech finishes
+    utterance.onend = () => {
+      setTimeout(onComplete, 1500); // 1.5s comfortable breather pause
+    };
+
+    utterance.onerror = () => {
+      setTimeout(onComplete, 2000);
+    };
+
+    window.speechSynthesis.speak(utterance);
   }
 
   function triggerRecap() {
@@ -489,44 +530,59 @@
     const cond = weatherStore.cur.weather[0].description;
     const windSpeed = Math.round(weatherStore.cur.wind.speed);
 
-    // Slide 1 (0s - 5s): Current Conditions
-    title.innerText = "CURRENT CONDITIONS";
-    body.innerHTML = `<span style="font-size:2.2rem; color:var(--ws-amber);">${temp}°F</span><br>` +
-                     `<span style="color:var(--ws-phosphor);">${cond.toUpperCase()}</span><br>` +
-                     `FEELS LIKE ${Math.round(weatherStore.cur.main.feels_like)}°F • HUMIDITY ${weatherStore.cur.main.humidity}%<br>` +
-                     `WINDS ${windSpeed} MPH`;
-    speakText(`Currently in ${locName}, it is ${temp} degrees with ${cond}. Winds are at ${windSpeed} miles per hour.`);
+    // Slide 1: Current Conditions
+    function runSlide1() {
+      title.innerText = "CURRENT CONDITIONS";
+      body.innerHTML = `<span style="font-size:2.2rem; color:var(--ws-amber);">${temp}°F</span><br>` +
+                       `<span style="color:var(--ws-phosphor);">${cond.toUpperCase()}</span><br>` +
+                       `FEELS LIKE ${Math.round(weatherStore.cur.main.feels_like)}°F • HUMIDITY ${weatherStore.cur.main.humidity}%<br>` +
+                       `WINDS ${windSpeed} MPH`;
+      speakAndFollowUp(
+        `Currently in ${locName}, it is ${temp} degrees with ${cond}. Winds are at ${windSpeed} miles per hour.`,
+        runSlide2
+      );
+    }
 
-    // Slide 2 (5s - 10s): Local Narrative Summary
-    setTimeout(() => {
+    // Slide 2: Local Narrative Summary
+    function runSlide2() {
       title.innerText = "LOCAL NARRATIVE";
       body.innerHTML = `LOCAL SUMMARY FOR ${locName.toUpperCase()}:<br>` +
                        `<span style="color:var(--ws-white);">${cond} with temperatures near ${temp} degrees. Humidity is running at ${weatherStore.cur.main.humidity} percent.</span>`;
-      speakText(`Here is your local summary. Expect ${cond} with temperatures holding around ${temp} degrees throughout the area.`);
-    }, 5000);
+      speakAndFollowUp(
+        `Here is your local summary. Expect ${cond} with temperatures holding around ${temp} degrees throughout the area.`,
+        runSlide3
+      );
+    }
 
-    // Slide 3 (10s - 15s): Regional Telemetry
-    setTimeout(() => {
+    // Slide 3: Regional Telemetry
+    function runSlide3() {
       title.innerText = "REGIONAL TELEMETRY";
       body.innerHTML = `SPRINGFIELD: ${temp}°F<br>` +
                        `DECATUR: ${temp - 1}°F • LINCOLN: ${temp + 1}°F<br>` +
                        `JACKSONVILLE: ${temp}°F • BLOOMINGTON: ${temp - 2}°F`;
-      speakText(`Looking across central Illinois, Springfield is at ${temp} degrees, Decatur at ${temp - 1}, and Bloomington at ${temp - 2}.`);
-    }, 10000);
+      speakAndFollowUp(
+        `Looking across central Illinois, Springfield is at ${temp} degrees, Decatur at ${temp - 1}, and Bloomington at ${temp - 2}.`,
+        runSlide4
+      );
+    }
 
-    // Slide 4 (15s - 20s): Extended Outlook
-    setTimeout(() => {
+    // Slide 4: Extended Outlook
+    function runSlide4() {
       title.innerText = "EXTENDED OUTLOOK";
       body.innerHTML = `3-DAY OUTLOOK AVAILABLE ON MAIN DISPLAY.<br><span style="color:var(--ws-amber);">STAY TUNED FOR CONTINUOUS LOCAL TELEMETRY.</span>`;
-      speakText(`That concludes your Local on the 8s recap. Stay tuned for continuous local telemetry.`);
-    }, 15000);
+      speakAndFollowUp(
+        `That concludes your Local on the 8s recap. Stay tuned for continuous local telemetry.`,
+        finishRecap
+      );
+    }
 
-    // Close after 20 Seconds
-    setTimeout(() => {
+    function finishRecap() {
       modal.classList.remove('active');
       isRecapActive = false;
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    }, 20000);
+    }
+
+    runSlide1();
   }
 
   /* Center Stage Renderer (Time-of-Day/Weather Pixel Scene vs Regional Map) */
@@ -559,12 +615,12 @@
     const h = canvas.height;
     const hour = new Date().getHours();
     
-    // Check main weather condition string (Rain, Drizzle, Thunderstorm, Clouds, Clear, Fog, Mist)
+    // Check main weather condition string
     const weatherMain = (weatherStore.cur && weatherStore.cur.weather && weatherStore.cur.weather[0])
       ? weatherStore.cur.weather[0].main.toLowerCase()
       : "clear";
 
-    // 1. Time-of-Day Sky & Sun/Moon Gradients
+    // Sky & Sun/Moon Gradients
     let skyGrad = ctx.createLinearGradient(0, 0, 0, h);
     let sunX = w * 0.75;
     let sunY = h * 0.3;
@@ -608,15 +664,15 @@
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Celestial Body (Pixel Sun / Moon)
+    // Celestial Body
     if (isNight) {
       ctx.fillStyle = '#ffeaad';
       ctx.fillRect(w - 45, 15, 18, 18);
       ctx.fillStyle = '#0a0d1a';
-      ctx.fillRect(w - 39, 15, 12, 18); // Crescent
+      ctx.fillRect(w - 39, 15, 12, 18);
     } else {
       ctx.fillStyle = '#fff3b0';
-      ctx.fillRect(sunX, sunY, 16, 16); // Pixel Sun
+      ctx.fillRect(sunX, sunY, 16, 16);
     }
 
     // Stars at Night
@@ -629,7 +685,7 @@
       }
     }
 
-    // Rolling Landscape Hills
+    // Hills
     ctx.fillStyle = hillColorNear;
     ctx.beginPath();
     ctx.ellipse(w / 3, h + 10, w * 0.6, 50, 0, 0, Math.PI * 2);
@@ -640,7 +696,7 @@
     ctx.ellipse(w * 0.7, h + 15, w * 0.5, 40, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cozy House Silhouette
+    // House
     const houseX = 35;
     const houseY = h - 45;
     ctx.fillStyle = '#05070d';
@@ -653,21 +709,20 @@
     ctx.lineTo(houseX + 36, houseY);
     ctx.fill();
 
-    // Window Lights (Lit up at Night/Dusk/Dawn or Rain)
+    // Windows
     if (isNight || hour < 8 || hour >= 18 || weatherMain.includes('rain')) {
       const glow = Math.sin(animFrame * 0.05) * 0.15 + 0.85;
       ctx.fillStyle = `rgba(255, 183, 3, ${glow})`;
       ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
       ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
     } else {
-      ctx.fillStyle = '#3a4a5b'; // Reflected daylight window
+      ctx.fillStyle = '#3a4a5b';
       ctx.fillRect(houseX + 8, houseY + 6, 8, 8);
       ctx.fillRect(houseX + 20, houseY + 6, 8, 8);
     }
 
-    // 2. Weather Overlays (Rain, Fog, Clouds)
+    // Weather Overlays
     if (weatherMain.includes('rain') || weatherMain.includes('drizzle') || weatherMain.includes('thunderstorm')) {
-      // Animated Pixel Rain Lines
       ctx.fillStyle = 'rgba(160, 210, 255, 0.6)';
       for (let i = 0; i < 25; i++) {
         const rx = (i * 17 + animFrame * 3) % w;
@@ -675,7 +730,6 @@
         ctx.fillRect(rx, ry, 1, 6);
       }
     } else if (weatherMain.includes('cloud') || weatherMain.includes('overcast')) {
-      // Passing Pixel Cloud Shapes
       ctx.fillStyle = isNight ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.4)';
       const cx1 = (animFrame * 0.3) % (w + 60) - 60;
       ctx.fillRect(cx1, 20, 40, 10);
@@ -684,7 +738,6 @@
       const cx2 = (animFrame * 0.2 + 100) % (w + 80) - 80;
       ctx.fillRect(cx2, 35, 50, 12);
     } else if (weatherMain.includes('fog') || weatherMain.includes('mist')) {
-      // Fog Bands
       ctx.fillStyle = 'rgba(200, 220, 240, 0.2)';
       ctx.fillRect(0, h - 30, w, 8);
       ctx.fillRect(0, h - 15, w, 12);
@@ -695,11 +748,9 @@
     const w = canvas.width;
     const h = canvas.height;
 
-    // Background
     ctx.fillStyle = '#0a0e17';
     ctx.fillRect(0, 0, w, h);
 
-    // Matrix Grid
     ctx.strokeStyle = '#162235';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 16) {
@@ -716,7 +767,6 @@
     function toX(normX) { return offsetX + normX * mapScale * 0.85; }
     function toY(normY) { return offsetY + normY * mapScale * 0.90; }
 
-    // Lake Michigan Vector
     ctx.fillStyle = '#102238';
     ctx.strokeStyle = '#2b4c73';
     ctx.lineWidth = 1;
@@ -729,7 +779,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Illinois Vector Boundary Coordinates
     const ilBoundary = [
       {x: 0.68, y: 0.06},
       {x: 0.68, y: 0.20},
@@ -746,7 +795,6 @@
       {x: 0.68, y: 0.06}
     ];
 
-    // Render State Area
     ctx.fillStyle = '#111a2a';
     ctx.strokeStyle = '#3a506b';
     ctx.lineWidth = 2;
@@ -761,7 +809,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Major Highways (I-55 & I-72)
     ctx.strokeStyle = 'rgba(255, 183, 3, 0.25)';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
@@ -781,7 +828,6 @@
 
     ctx.setLineDash([]);
 
-    // Surrounding Cities & Live Temperatures
     const curTemp = weatherStore.cur ? Math.round(weatherStore.cur.main.temp) : 72;
 
     const towns = [
