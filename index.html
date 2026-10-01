@@ -287,7 +287,7 @@
      WEATHERSTAR API INTEGRATION (OPENWEATHER)
      ========================================================================= */
   async function fetchWeatherData() {
-    if (!WS_CONFIG.apiKey || WS_CONFIG.apiKey === "YOUR_OPENWEATHER_API_KEY") {
+    if (!WS_CONFIG.apiKey || WS_CONFIG.apiKey === "5c2023567ce4ee49c2d715cc37bd75f0") {
       document.getElementById('val-cond').innerText = "NO API KEY";
       document.getElementById('ticker-text').innerText = "PLEASE INSERT A VALID OPENWEATHER API KEY INTO WS_CONFIG IN CODE.";
       return;
